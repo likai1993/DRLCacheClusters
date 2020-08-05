@@ -126,7 +126,7 @@ class Cache(object):
     '''
     # Make action at the current decision epoch and run to the
     # next decision epoch.
-    def step(self, action):
+    def step(self, action, is_training=True):
         if self.hasDone():
             raise ValueError("Simulation has finished, use reset() to restart simulation.")
 
@@ -157,7 +157,7 @@ class Cache(object):
         self._run_until_miss()
 
         # Get observation.
-        observation = self._get_observation()
+        observation = self._get_observation(is_training)
 
         # Zhong et. al. 2018
         if self.reward_params['name'].lower() == "zhong":
@@ -295,20 +295,20 @@ class Cache(object):
         while (True):
             time.sleep(interval)
             observation=dict(features=self._get_features())
+            print("re-clustering...")
             self._do_cluster(observation)
 
     def get_cluster_features(self, page_features):
         # average access frequency
         cluster_features = np.array([]) 
         for label in range(np.max(self.clusters.labels_)+1):
-            indices = np.where(kmeans.labels_==label)[0]
+            indices = np.where(self.clusters.labels_==label)[0]
             elements = np.array([page_features[i] for i in indices])
             # calculate new center
             cluster_features = np.concatenate([cluster_features, np.mean(elements, axis=0)], axis=0)
         return cluster_features
 
     def _do_cluster(self, observation):
-        print("refresh clsuters...")
         num_rows = len(observation['features'])/3
         page_features = observation['features'].reshape(int(num_rows), 3)
         self.clusters = KMeans(n_clusters=self.cluster_num, random_state=0).fit(page_features)
@@ -337,7 +337,7 @@ class Cache(object):
             dirty_bits=self.dirty_bits.copy()
         )
         if training:
-            # reclustering
+            # keep reclustering
             self._do_cluster(observation)
             features = np.concatenate([self.clusters.cluster_centers_[i] for i in range(np.max(self.clusters.labels_)+1)])
             cluster_features= dict(features=features)

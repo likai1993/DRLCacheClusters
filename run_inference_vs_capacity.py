@@ -87,7 +87,7 @@ if __name__ == "__main__":
                     action = agent.choose_action_new(observation)
 
                     # agent take action and get next observation and reward
-                    observation_, reward = env.step(action)
+                    observation_, reward = env.step(action, is_training=False)
 
                     # break while loop when end of this episode
                     if env.hasDone():
