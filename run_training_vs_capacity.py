@@ -1,4 +1,6 @@
-import sys, os
+#! /usr/bin/python3
+import time
+import threading
 from cache.Cache import Cache
 from agents.CacheAgent import *
 from agents.DQNAgent import DQNAgent
@@ -7,19 +9,18 @@ from cache.DataLoader import DataLoaderPintos
 
 if __name__ == "__main__":
     # disk activities
-    file_paths = ["data/filesys/extended/dir-open.csv", "data/filesys/extended/dir-vine.csv"
-        , "data/filesys/extended/grow-create.csv", "data/filesys/extended/grow-file-size.csv"
-        , "data/filesys/extended/grow-seq-sm.csv", "data/filesys/extended/syn-rw-persistence.csv"
-    ]
-
-    for path in file_paths:
-
-        case_name = os.path.basename(path)
-        print("==================== Testcase %s ====================" % case_name)
+    datafile = sys.argv[1]
+    dataloader = DataLoaderPintos([datafile])
+    
+    sizes = [1000, 2000, 3000, 4000]
+    sizes = [5, 25, 50, 100, 300]
+    sizes = [50, 100, 200, 400]
+    for cache_size in sizes:
+        
+        print("==================== Cache Size: %d ====================" % cache_size)
 
         # cache
-        dataloader = DataLoaderPintos(path)
-        env = Cache(dataloader, 50
+        env = Cache(dataloader, cache_size
             , feature_selection=('Base',)
             , reward_params = dict(name='our', alpha=0.5, psi=10, mu=1, beta=0.3)
             , allow_skip=False
@@ -27,7 +28,9 @@ if __name__ == "__main__":
         
         # agents
         agents = {}
-        agents['DQN'] = DQNAgent(env.n_actions, env.n_features,
+        num_of_clusters = 8
+        agents['DQN'] = DQNAgent(num_of_clusters, num_of_clusters*3,
+        #agents['DQN'] = DQNAgent(env.n_actions, env.n_actions*3,
             learning_rate=0.01,
             reward_decay=0.9,
 
@@ -50,16 +53,15 @@ if __name__ == "__main__":
             output_graph=False,
             verbose=0
         )
-        agents['Random'] = RandomAgent(env.n_actions)
-        agents['LRU'] = LRUAgent(env.n_actions)
-        agents['LFU'] = LFUAgent(env.n_actions)
-        agents['MRU'] = MRUAgent(env.n_actions)
-    
+        #agents['Random'] = RandomAgent(env.n_actions)
+        #agents['LRU'] = LRUAgent(env.n_actions)
+        #agents['LFU'] = LFUAgent(env.n_actions)
+        #agents['MRU'] = MRUAgent(env.n_actions)
         for (name, agent) in agents.items():
+
             print("-------------------- %s --------------------" % name)
             step = 0
             miss_rates = []    # record miss rate for every episode
-            
             # determine how many episodes to proceed
             # 100 for learning agents, 20 for random agents
             # 1 for other agents because their miss rates are invariant
@@ -72,11 +74,13 @@ if __name__ == "__main__":
 
             for episode in range(episodes):
                 # initial observation
+                begin = time.time()
                 observation = env.reset()
 
                 while True:
                     # agent choose action based on observation
-                    action = agent.choose_action(observation)
+                    #action = agent.choose_action(observation)
+                    action = agent.choose_action_new(observation)
 
                     # agent take action and get next observation and reward
                     observation_, reward = env.step(action)
@@ -95,18 +99,23 @@ if __name__ == "__main__":
 
                     if step % 100 == 0:
                         mr = env.miss_rate()
-
+                        #print("Agent=%s, Size=%d, Step=%d, Accesses=%d, Misses=%d, MissRate=%f"
+                        #  % (name, cache_size, step, env.total_count, env.miss_count, mr)
+                        #)
                     step += 1
 
                 # report after every episode
+                end = time.time()
                 mr = env.miss_rate()
-                print("Agent=%s, Case=%s, Episode=%d: Accesses=%d, Misses=%d, MissRate=%f"
-                    % (name, case_name, episode, env.total_count, env.miss_count, mr)
+                print("Agent=%s, Size=%d, Episode=%d: Accesses=%d, Misses=%d, MissRate=%f, Duration=%f"
+                    % (name, cache_size, episode, env.total_count, env.miss_count, mr, end-begin)
                 )
                 miss_rates.append(mr)
-
-            # summary
+            
             miss_rates = np.array(miss_rates)
-            print("Agent=%s, Case=%s: Mean=%f, Median=%f, Max=%f, Min=%f"
-                % (name, case_name, np.mean(miss_rates), np.median(miss_rates), np.max(miss_rates), np.min(miss_rates))
+            print("Agent=%s, Size=%d: Mean=%f, Median=%f, Max=%f, Min=%f"
+                % (name, cache_size, np.mean(miss_rates), np.median(miss_rates), np.max(miss_rates), np.min(miss_rates))
             )
+            # save model
+            if isinstance(agent, LearnerAgent):
+                agent.save(cache_size)

@@ -66,8 +66,8 @@ if __name__ == "__main__":
             # 100 for learning agents, 20 for random agents
             # 1 for other agents because their miss rates are invariant
             if isinstance(agent, LearnerAgent):
-                episodes = 100
                 episodes = 1
+                # start parallel reclustering thread, arg is the interval
                 if agent.load(cache_size):
                     t = threading.Thread(target = env.refresh_clusters, args=(10,))
                     t.start()
@@ -93,11 +93,6 @@ if __name__ == "__main__":
                     if env.hasDone():
                         break
 
-                    agent.store_transition(observation, action, reward, observation_)
-
-                    if isinstance(agent, LearnerAgent) and (step > 20) and (step % 5 == 0):
-                        agent.learn()
-
                     # swap observation
                     observation = observation_
 
@@ -120,5 +115,3 @@ if __name__ == "__main__":
             print("Agent=%s, Size=%d: Mean=%f, Median=%f, Max=%f, Min=%f"
                 % (name, cache_size, np.mean(miss_rates), np.median(miss_rates), np.max(miss_rates), np.min(miss_rates))
             )
-            if isinstance(agent, LearnerAgent):
-                agent.save(cache_size)
