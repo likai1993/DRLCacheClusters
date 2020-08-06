@@ -2,11 +2,13 @@ import sys, time, os, random
 import numpy as np
 from sklearn.cluster import KMeans
 from cache.DataLoader import *
+from collections import Counter # improve the counter speed in _elapsed_requests
                     
 class Cache(object):
     def __init__(self, requests, cache_size
         # Time span for different terms
-        , terms=[10, 100, 1000]
+        #, terms=[10, 100, 1000]
+        , terms=[1000, 10000, 100000]
 
         # Features. Available 'Base', 'UT', and 'CT'
         # Refer to the report for what they mean
@@ -241,12 +243,24 @@ class Cache(object):
         self.used_times[slot_id] = self.cur_index
 
     # The number of requests on rc_id among last `term` requests.
+    '''
     def _elapsed_requests(self, term, rc_id):
         start = self.cur_index - term + 1
         if start < 0: start = 0
         end = self.cur_index + 1
         if end > len(self.requests): end = len(self.requests)
-        return self.requests[start : end].count(rc_id)
+        #return self.requests[start : end].count(rc_id)
+        return Counter(self.requests[start : end])[rc_id]
+   
+    '''
+    # KAI modified to improve Count performance
+    def _elapsed_requests(self, term):
+        start = self.cur_index - term + 1
+        if start < 0: start = 0
+        end = self.cur_index + 1
+        if end > len(self.requests): end = len(self.requests)
+        C = Counter(self.requests[start : end])
+        return np.array([C[rc] for rc in self.slots])
 
     # The number of requests on rc_id among next `term` requests.
     def _next_requests(self, term, rc_id):
@@ -269,8 +283,8 @@ class Cache(object):
         #], axis=0)
 
         features = np.concatenate([
-            np.array([self._elapsed_requests(t, rc) for rc in self.slots for t in self.FEAT_TREMS])
-        ])
+            self._elapsed_requests(t) for t in self.FEAT_TREMS]
+        )
 
         # last accessed time
         if 'UT' in self.sel_features:

@@ -12,9 +12,10 @@ if __name__ == "__main__":
     datafile = sys.argv[1]
     dataloader = DataLoaderPintos([datafile])
     
-    sizes = [1000, 2000, 3000, 4000]
-    sizes = [5, 25, 50, 100, 300]
-    sizes = [50, 100, 200, 400]
+    #sizes = [1000, 2000, 3000, 4000]
+    #sizes = [5, 25, 50, 100, 300]
+    #sizes = [50, 100, 200, 400]
+    sizes = [10000, 50000, 100000, 200000]
     for cache_size in sizes:
         
         print("==================== Cache Size: %d ====================" % cache_size)
@@ -99,9 +100,9 @@ if __name__ == "__main__":
 
                     if step % 100 == 0:
                         mr = env.miss_rate()
-                        #print("Agent=%s, Size=%d, Step=%d, Accesses=%d, Misses=%d, MissRate=%f"
-                        #  % (name, cache_size, step, env.total_count, env.miss_count, mr)
-                        #)
+                        print("Agent=%s, Size=%d, Step=%d, Accesses=%d, Misses=%d, MissRate=%f"
+                          % (name, cache_size, step, env.total_count, env.miss_count, mr)
+                        )
                     step += 1
 
                 # report after every episode
@@ -118,4 +119,4 @@ if __name__ == "__main__":
             )
             # save model
             if isinstance(agent, LearnerAgent):
-                agent.save(cache_size)
+                agent.save(cache_size, datafile)

@@ -228,17 +228,18 @@ class DQNAgent(LearnerAgent):
 
         return cluster_id
 
-    def save(self, size):
+    def save(self, size, data):
         saver = tf.train.Saver()
-        file_prefix = "DRLCache_model_1_"+str(size)
-        model_file = "/tmp/"+file_prefix + "/" + file_prefix+ ".ckpt"
+        model_dir = "/tmp/" + "DRLCache_model_"+str(size) + "_" + data.split(".")[0]
+        file_prefix = "DRLCacheCluster_model"
+        model_file = model_dir+ "/" + file_prefix+ ".ckpt"
         save_path = saver.save(self.sess, model_file)
         print("Model saved in path: %s" % save_path)
 
-    def load(self, size):
+    def load(self, size, data):
         saver = tf.train.Saver()
-        file_prefix = "DRLCache_model_1_"+str(size)
-        model_dir = "/tmp/"+file_prefix
+        model_dir = "/tmp/" + "DRLCache_model_"+str(size) + "_" + data.split(".")[0]
+        file_prefix = "DRLCacheCluster_model"
         model_file = model_dir + "/" + file_prefix+ ".ckpt"
         if os.path.isdir(model_dir):
             saver.restore(self.sess, model_file)

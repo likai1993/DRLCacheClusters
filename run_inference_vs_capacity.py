@@ -68,7 +68,7 @@ if __name__ == "__main__":
             if isinstance(agent, LearnerAgent):
                 episodes = 1
                 # start parallel reclustering thread, arg is the interval
-                if agent.load(cache_size):
+                if agent.load(cache_size, datafile):
                     t = threading.Thread(target = env.refresh_clusters, args=(10,))
                     t.start()
             elif isinstance(agent, RandomAgent):
