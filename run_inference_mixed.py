@@ -11,8 +11,7 @@ if __name__ == "__main__":
     # disk activities
     datafile1 = sys.argv[1]
     datafile2 = sys.argv[2]
-    number_of_peroids = int(sys.argv[3])
-    dataloader = DataLoaderMix([datafile1, datafile2], number_of_peroids)
+    dataloader = DataLoaderMix([datafile1, datafile2])
 
     sizes = [10000, 50000, 100000, 200000]
     sizes = [7500]

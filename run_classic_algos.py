@@ -10,10 +10,9 @@ from cache.Cache import Cache
 if __name__ == "__main__":
     # disk activities
     datafile = sys.argv[1]
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 3:
         datafile2 = sys.argv[2]
-        num_of_peroids = int(sys.argv[3])
-        dataloader = DataLoaderMix([datafile, datafile2], num_of_peroids) 
+        dataloader = DataLoaderMix([datafile, datafile2])
     else:
         dataloader = DataLoaderPintos([datafile])
     

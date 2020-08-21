@@ -43,7 +43,7 @@ class DataLoaderPintos(DataLoader):
         return self.operations
 
 class DataLoaderMix(DataLoader):
-    def __init__(self, progs, num_of_peroids, boot=False):
+    def __init__(self, progs, boot=False):
         super(DataLoaderMix, self).__init__()
 
         if isinstance(progs, str): progs = [progs]
@@ -52,14 +52,12 @@ class DataLoaderMix(DataLoader):
         for prog in progs:
             traces[prog] = []
             operations[prog] = []
-            for peroid in range(num_of_peroids):
-                trace = prog.split("peroid")[0] + "peroid_" + str(peroid)
-                df = pd.read_csv(trace, header=0)
-                if not boot: df = df.loc[df['boot/exec'] == 1, :]
-                trace = list(df['blocksector'])
-                operation = list(df['read/write'])
-                traces[prog] += trace
-                operations[prog] += operation
+            df = pd.read_csv(prog, header=0)
+            if not boot: df = df.loc[df['boot/exec'] == 1, :]
+            trace = list(df['blocksector'])
+            operation = list(df['read/write'])
+            traces[prog] += trace
+            operations[prog] += operation
 
         # mixing
         pivot = 0

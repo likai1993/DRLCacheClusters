@@ -11,17 +11,16 @@ if __name__ == "__main__":
     # disk activities
     datafile1 = sys.argv[1]
     datafile2 = sys.argv[2]
-    num_of_peroids = int(sys.argv[3]) 
-    dataloader = DataLoaderMix([datafile1, datafile2], num_of_peroids)
+    dataloader = DataLoaderMix([datafile1, datafile2])
     
     #sizes = [10000, 50000, 100000, 200000]
     sizes = [7500]
+    num_of_clusters = 5 
     for cache_size in sizes:
         
         print("==================== Cache Size: %d ====================" % cache_size)
 
         # cache
-        num_of_clusters = 5 
         env = Cache(dataloader, cache_size
             , feature_selection=('Base',)
             , reward_params = dict(name='our', alpha=0.5, psi=10, mu=1, beta=0.3)
