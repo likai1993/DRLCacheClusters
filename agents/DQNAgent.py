@@ -180,6 +180,7 @@ class DQNAgent(LearnerAgent):
             self.reward_history.pop(0)
         self.reward_history.append(r)
 
+    '''
     def choose_action(self, observation):
         # draw probability sample
         coin = np.random.uniform()
@@ -200,10 +201,9 @@ class DQNAgent(LearnerAgent):
             raise ValueError("DQNAgent: Error index %d" % action)
         return action
 
-    '''
     Added by Kai Li, to reduce the inference overhead by clustering
     '''
-    def choose_action_new(self, observation):
+    def choose_action(self, observation):
         #print("features:", observation['features'])
 
         # draw probability sample
@@ -228,26 +228,21 @@ class DQNAgent(LearnerAgent):
 
         return cluster_id
 
-    def save(self, size, data):
-        saver = tf.train.Saver()
-        model_dir = "/tmp/" + "DRLCache_model_"+str(size) + "_" + data.split(".")[0]
-        file_prefix = "DRLCacheCluster_model"
-        model_file = model_dir+ "/" + file_prefix+ ".ckpt"
-        save_path = saver.save(self.sess, model_file)
-        print("Model saved in path: %s" % save_path)
+    def choose_action_inference(self, observation):
+        #print("features:", observation['features'])
+        cluster_features = observation['features']
+        # to have batch dimension when feed into tf placeholder
+        cluster_features = cluster_features[np.newaxis, :]
 
-    def load(self, size, data):
-        saver = tf.train.Saver()
-        model_dir = "/tmp/" + "DRLCache_model_"+str(size) + "_" + data.split(".")[0]
-        file_prefix = "DRLCacheCluster_model"
-        model_file = model_dir + "/" + file_prefix+ ".ckpt"
-        if os.path.isdir(model_dir):
-            saver.restore(self.sess, model_file)
-            print("Model restored.")
-            return True
-        else:
-            print("Model not exists.")
-            return False
+        # forward feed the observation and get q value for every actions
+        actions_value = self.sess.run(self.q_eval, feed_dict={self.s: cluster_features})
+        #print("actions_value", actions_value)
+        cluster_id = np.argmax(actions_value)
+            
+        if cluster_id < 0 or cluster_id > self.n_actions:
+            raise ValueError("DQNAgent: Error index %d" % cluster_id)
+
+        return cluster_id
 
     def learn(self):
         # check to replace target parameters
@@ -353,3 +348,37 @@ class DQNAgent(LearnerAgent):
         plt.ylabel('Cost')
         plt.xlabel('training steps')
         plt.show()
+
+    def save(self, size, data):
+        saver = tf.train.Saver()
+        model_dir = "/tmp/" + "DRLCache_model_"+str(size) + "_testing/"
+        if not os.path.exists(model_dir):
+            os.mkdir(model_dir)
+        if isinstance(data, str):
+            model_dir += data.split("/")[-1].split(".")[0]
+        elif isinstance(data, list):
+            model_dir += "mixed" 
+        if not os.path.exists(model_dir):
+            os.mkdir(model_dir)
+
+        file_prefix = "DRLCacheCluster_model"
+        model_file = model_dir+ "/" + file_prefix+ ".ckpt"
+        save_path = saver.save(self.sess, model_file)
+        print("Model saved in path: %s" % save_path)
+
+    def load(self, size, data):
+        saver = tf.train.Saver()
+        model_dir = "/tmp/" + "DRLCache_model_"+str(size) + "_testing/"
+        if isinstance(data, str):
+            model_dir += data.split("/")[-1].split(".")[0]
+        elif isinstance(data, list):
+            model_dir += "mixed" 
+        file_prefix = "DRLCacheCluster_model"
+        model_file = model_dir + "/" + file_prefix+ ".ckpt"
+        if os.path.isdir(model_dir):
+            saver.restore(self.sess, model_file)
+            print("Model restored.")
+            return True
+        else:
+            print("Model not exists.", model_file)
+            return False
